@@ -1,0 +1,163 @@
+---
+title: "Milestone Report"
+author: "Khoa Tran"
+date: "01/09/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library
+
+Load the needed library taht we going to use 
+```{r message = FALSE , warning=FALSE}
+library(tidyverse)
+library(tidytext)
+library(tm)
+library(dplyr)
+# stemDocument
+library(SnowballC)
+library(tokenizers)
+```
+
+
+## Download data
+
+Download the dataset using the url and store them in a Data folder
+```{r}
+if(!file.exists("Data")){dir.create("Data")}
+fileName <- "Coursera-SwiftKey.zip"
+path <- getwd()
+if(!file.exists(paste(path,"/Data","/",fileName,sep = ""))){
+        url <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+        download.file(url,destfile = paste(path,"/Data","/",fileName,sep = "")) 
+        unzip(paste(path,"/Data","/",fileName,sep = ""),exdir = paste(path,"/Data", sep =""))
+        }
+```
+
+## Preprocess
+The file contain 3 txt dataset that been collect from 3 different source. Since the dataset large, we will sample 10% from each of them a combine into a big text dataset
+
+```{r warning=FALSE}
+filepath <- list.files(path = paste(getwd(),"/Data/final/en_US",sep = "") , pattern="*.txt", full.names=TRUE, recursive=FALSE)
+
+
+lines<- lapply(filepath, function(x) {
+
+        con <- file(x, "r")
+        line <- readLines(con)
+        set.seed(123)
+        close(con)
+        line <- sample(line,length(line)*0.1)
+        text_df <- tibble(id = 1:length(line), text = line)
+        text_df <- mutate(text_df, text = text_df$text)
+        return(text_df)
+})
+str(lines)
+```
+
+Our dataset is a list of 3 simple dataframes or tibbles, each contain a text example
+
+As we can see, our data is quiet messy, we have some cleaning that we need to do. We gonna use a special data type call Corpus to contain the text set
+```{r warning=FALSE}
+lines_corpus <- Corpus(VectorSource(lines))
+# remove lines to save memory since we do not need it anymore
+rm(lines)
+lines_corpus
+```
+
+Now come the cleaning part
+```{r warning=FALSE}
+# convert text to lower
+lines_corpus <- tm_map(lines_corpus,tolower)
+# remove punctuation
+lines_corpus <- tm_map(lines_corpus, removePunctuation)
+# function to remove url
+removeURL <- function(x) gsub("http[^[:space:]]*", "", x)
+lines_corpus <- tm_map(lines_corpus, content_transformer(removeURL))
+# remove non-english word
+removeNumPunct <- function(x) gsub('[^a-zA-Z|[:blank:]]', "", x)
+lines_corpus <- tm_map(lines_corpus, content_transformer(removeNumPunct))
+# remove stopwords
+lines_corpus <- tm_map(lines_corpus, removeWords,stopwords("english"))
+# strip white space
+lines_corpus <- tm_map(lines_corpus, stripWhitespace)
+# stemming the words
+lines_corpus <- tm_map(lines_corpus, stemDocument)
+# finally remove profanity
+profanity <- read.csv("profanityWords.txt")$V1
+lines_corpus <- tm_map(lines_corpus, removeWords, profanity)
+rm(profanity)
+
+```
+
+## Analysis
+
+After we do all the cleaning, lets take a look into our new data set
+
+We going to tokenize the set with different 1-grams(unigram), 2-grams, 3-grams method
+
+```{r warning=FALSE}
+one_gram_token <- tokenize_ngrams(lines_corpus$content,n=1)
+one_gram_token <- data.frame(id = 1:length(unlist(one_gram_token)),token = unlist(one_gram_token)) %>% count(token,sort =TRUE)
+
+ggplot(data=head(one_gram_token,30), aes(x = n, y=reorder(token,n))) + geom_bar(stat="identity") + xlab("number of times") + ylab("words")
+hist(log(one_gram_token$n), main = "Distibution of word in a log",xlab = " number of time in log")
+```
+
+
+```{r warning=FALSE}
+two_gram_token <- tokenize_ngrams(lines_corpus$content,n=2)
+two_gram_token <- data.frame(id = 1:length(unlist(two_gram_token)),token = unlist(two_gram_token)) %>% count(token,sort =TRUE)
+
+ggplot(data=head(two_gram_token,30), aes(x = n, y=reorder(token,n))) + geom_bar(stat="identity") + xlab("number of times") + ylab("words")
+hist(log(two_gram_token$n),main = "Distibution of 2-word in a log",xlab = " number of time in log")
+```
+
+
+```{r warning=FALSE}
+three_gram_token <- tokenize_ngrams(lines_corpus$content,n=3)
+three_gram_token <- data.frame(id = 1:length(unlist(three_gram_token)),token = unlist(three_gram_token)) %>% count(token,sort =TRUE)
+
+ggplot(data=head(three_gram_token,30), aes(x = n, y=reorder(token,n))) + geom_bar(stat="identity") + xlab("number of times") + ylab("words")
+hist(log(three_gram_token$n),main = "Distibution of 3-word in a log",xlab = " number of time in log")
+```
+
+
+As we can see ,some majority of word or combination of words dominate the count of our dataset
+
+Lets count how many unique word cover 50% of the language 
+
+```{r warning=FALSE}
+countWordPercen <- function(gram_token, percentage){
+        count = 0 
+        sumN = 0
+        for ( ns in gram_token$n ){
+                if (sumN/sum(gram_token$n) > percentage){
+                        return(count)
+                }
+                else{
+                        count = count + 1 
+                        sumN = sumN + ns 
+                }
+        }
+        
+}
+
+countWordPercen(one_gram_token,0.5)
+```
+So there about just under 500(only 0.3%) words that cover 50% of the language.
+How about 90% ?
+
+```{r warning=FALSE}
+countWordPercen(one_gram_token,0.9)
+```
+
+More over 5% of the words cover 90% of the language.
+
+
+
+## Next step
+This part only cover the analysis, the next step will be using the knowledge we gain in the analysis to build a model to predict words. Final steps will be building a shiny app with easy to use interface.

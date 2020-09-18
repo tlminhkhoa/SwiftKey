@@ -1,0 +1,63 @@
+---
+title: "SwiftKey Report"
+author: "Khoa Tran"
+date: "31/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Load the needed libray
+```{r}
+library(tidyverse)
+library(tidytext)
+```
+
+
+## Download dataset
+```{r}
+if(!file.exists("Data")){dir.create("Data")}
+fileName <- "Coursera-SwiftKey.zip"
+path <- getwd()
+if(!file.exists(paste(path,"/Data","/",fileName,sep = ""))){
+        url <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+        download.file(url,destfile = paste(path,"/Data","/",fileName,sep = "")) 
+        unzip(paste(path,"/Data","/",fileName,sep = ""),exdir = paste(path,"/Data", sep =""))
+        }
+```
+
+
+```{r}
+con <- file(paste(path,"/Data/final/en_US","/","en_US.news.txt",sep = ""), "r") 
+lines <- readLines(con)
+set.seed(123)
+lines <- sample(lines,length(lines)*0.1)
+text_df_news <- tibble(line = 1:length(lines), text = lines)
+text_df_news <- mutate(text_df_news, text = text_df_news$text)
+tokenize_news <- text_df_news %>% unnest_tokens(word, text) %>% count(word, sort = TRUE)
+summary(nchar(lines))
+```
+
+```{r}
+con <- file(paste(path,"/Data/final/en_US","/","en_US.blogs.txt",sep = ""), "r") 
+lines <- readLines(con)
+set.seed(123)
+lines <- sample(lines,length(lines)*0.1)
+text_df_blogs <- tibble(line = 1:length(lines), text = lines)
+text_df_blogs <- mutate(text_df_blogs, text = text_df_blogs$text)
+tokenize_blogs <- text_df_blogs %>% unnest_tokens(word, text) %>% count(word, sort = TRUE)
+summary(nchar(lines))
+```
+
+
+```{r}
+con <- file(paste(path,"/Data/final/en_US","/","en_US.twitter.txt",sep = ""), "r") 
+lines <- readLines(con)
+set.seed(123)
+lines <- sample(lines,length(lines)*0.1)
+text_df_twitter <- tibble(line = 1:length(lines), text = lines)
+text_df_twitter <- mutate(text_df_twitter, text = text_df_twitter$text)
+tokenize_twitter <- text_df_twitter %>% unnest_tokens(word, text) %>% count(word, sort = TRUE)
+summary(nchar(lines))
+```

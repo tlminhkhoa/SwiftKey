@@ -1,0 +1,67 @@
+---
+title: "Presentation"
+author: "Khoa Tran"
+date: "18/09/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+<!-- ## Coursera Capstone Project Presentation  -->
+
+<!-- 18-Spetember-2020   -->
+<!-- Khoa Tran   -->
+
+
+<!-- This is a presentation for the Coursera Data Science Specialization course project -->
+
+
+## NgramPredictor
+
+This is an application to predict the next word that the user going to say. We can achieve our goal, using ngram model. Basic, the model will into the too last two words that the user inputed, then calculate the probability of the next word. It also implement smoothing to account for missing words that is not in the dictionary. Also the model use backoff algorithm to jump to lower n-gram if needed
+
+The n-gram predcition algorithm is trained using the subset of the following data set:
+
+- News Data set 
+- Blogs Data set  
+- Twitter Data set  
+
+
+## Preprocessing
+
+Since the 3 given that set is hugh, we just you a random subset of the data sets to prepresent them.
+
+The following steps was done in order to the new data set:
+
+- Words were transform to lower
+- Punctuations were removed 
+- URLs were removed
+- Remove non-English words
+- Remove english stop words
+- Strip white space
+- Stem the words 
+- Strip profanity words 
+
+
+
+## Application 
+
+The user need to input the sentence that the want for predictive model, the application will read in the given text. After calculation, and return the 3 most likely word and its log probability via a bar chart form.
+
+![](example.PNG){width=100%}
+
+## Conclusion
+
+The application can be found at:
+https://tlminhkhoa.shinyapps.io/NgramPredictor/
+
+The analysis of the data set can be found at:
+https://rpubs.com/tlminhkhoa/MilestoneReport
+
+The source code can be found at: 
+https://github.com/tlminhkhoa/SwiftKey.git
+
+Reference:            
+https://rpubs.com/mszczepaniak/predictkbo3model
